@@ -3,22 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-declare(strict_types=1);
 
 namespace Magento\MysqlMq\Test\Unit\Setup;
 
-use Magento\Framework\DB\Adapter\AdapterInterface;
-use Magento\Framework\DB\Select;
-use Magento\Framework\MessageQueue\Topology\Config\QueueConfigItemInterface;
-use Magento\Framework\MessageQueue\Topology\ConfigInterface as TopologyConfigInterface;
-use Magento\Framework\Setup\ModuleContextInterface;
-use Magento\Framework\Setup\SchemaSetupInterface;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
-use Magento\MysqlMq\Setup\Recurring;
-use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
 
-class RecurringTest extends TestCase
+/**
+ * Class RecurringTest
+ */
+class RecurringTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var ObjectManager
@@ -26,27 +19,25 @@ class RecurringTest extends TestCase
     private $objectManager;
 
     /**
-     * @var Recurring
+     * @var \Magento\MysqlMq\Setup\Recurring
      */
     private $model;
 
     /**
-     * @var \Magento\Framework\MessageQueue\ConfigInterface|MockObject
+     * @var \Magento\Framework\MessageQueue\ConfigInterface|\PHPUnit_Framework_MockObject_MockObject
      */
     private $messageQueueConfig;
 
     /**
      * {@inheritdoc}
      */
-    protected function setUp(): void
+    protected function setUp()
     {
         $this->objectManager = new ObjectManager($this);
-        $this->messageQueueConfig = $this->getMockBuilder(
-            TopologyConfigInterface::class
-        )
+        $this->messageQueueConfig = $this->getMockBuilder(\Magento\Framework\MessageQueue\ConfigInterface::class)
             ->getMockForAbstractClass();
         $this->model = $this->objectManager->getObject(
-            Recurring::class,
+            \Magento\MysqlMq\Setup\Recurring::class,
             [
                 'messageQueueConfig' => $this->messageQueueConfig,
             ]
@@ -58,14 +49,23 @@ class RecurringTest extends TestCase
      */
     public function testInstall()
     {
-        for ($i = 1; $i <= 3; $i++) {
-            $queue = $this->getMockForAbstractClass(QueueConfigItemInterface::class);
-            $queue->expects($this->once())
-                ->method('getName')
-                ->willReturn('queue_name_' . $i);
-            $queues[] = $queue;
-        }
-
+        $binds = [
+            'first_bind' => [
+                'queue' => 'queue_name_1',
+                'exchange' => 'magento-db',
+                'topic' => 'queue.topic.1'
+            ],
+            'second_bind' => [
+                'queue' => 'queue_name_2',
+                'exchange' => 'magento-db',
+                'topic' => 'queue.topic.2'
+            ],
+            'third_bind' => [
+                'queue' => 'queue_name_3',
+                'exchange' => 'magento-db',
+                'topic' => 'queue.topic.3'
+            ]
+        ];
         $dbQueues = [
             'queue_name_1',
             'queue_name_2',
@@ -75,18 +75,18 @@ class RecurringTest extends TestCase
         ];
         $queueTableName = 'queue_table';
 
-        $setup = $this->getMockBuilder(SchemaSetupInterface::class)
+        $setup = $this->getMockBuilder(\Magento\Framework\Setup\SchemaSetupInterface::class)
             ->getMockForAbstractClass();
-        $context = $this->getMockBuilder(ModuleContextInterface::class)
+        $context = $this->getMockBuilder(\Magento\Framework\Setup\ModuleContextInterface::class)
             ->getMockForAbstractClass();
 
         $setup->expects($this->once())->method('startSetup')->willReturnSelf();
-        $this->messageQueueConfig->expects($this->once())->method('getQueues')->willReturn($queues);
-        $connection = $this->getMockBuilder(AdapterInterface::class)
+        $this->messageQueueConfig->expects($this->once())->method('getBinds')->willReturn($binds);
+        $connection = $this->getMockBuilder(\Magento\Framework\DB\Adapter\AdapterInterface::class)
             ->getMockForAbstractClass();
         $setup->expects($this->once())->method('getConnection')->willReturn($connection);
         $setup->expects($this->any())->method('getTable')->with('queue')->willReturn($queueTableName);
-        $select = $this->getMockBuilder(Select::class)
+        $select = $this->getMockBuilder(\Magento\Framework\DB\Select::class)
             ->disableOriginalConstructor()
             ->getMock();
         $connection->expects($this->once())->method('select')->willReturn($select);
